@@ -1,0 +1,4 @@
+- source: Upwork-Analysis.qmd
+  quarto-pub:
+    - id: ec6fe944-1093-4cdc-8fa7-94e6a4e507db
+      url: 'https://uzee22.quarto.pub/upwork-market-analysis-7de0'

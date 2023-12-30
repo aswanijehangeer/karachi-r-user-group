@@ -1,0 +1,200 @@
+---
+title: "Exploratory Data Analysis"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(scales)
+library(gt)
+library(here)
+library(plotly)
+```
+## Load the clean data
+
+```{r}
+data <- (read_csv(here("data/data_cleaned.csv")))
+
+```
+
+## Distribution of Full Time Projects
+```{r, warning=FALSE}
+p <- ggplot(data, aes(x = search_keyword, y = job_cost, fill = search_keyword)) +
+  geom_boxplot(size = 1,
+               outlier.shape = 1,
+               outlier.color = "black",
+               outlier.size  = 3) +
+  scale_y_continuous(label = dollar) +
+  labs(title = "One Time Project Cost by Keyword Search", 
+       subtitle = "Developers Seize High-Value Project Opportunities",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggplotly(p) 
+```
+
+Since we know that mean is subject to change in case of outliers in skewed distributions. So we calculate medians. 
+
+```{r}
+# calculate median of fixed price job for each keyword
+median_project_prices_keyword <- data %>%
+  group_by(search_keyword) %>%
+  summarize(fixed_price_project_value = median(job_cost, na.rm = TRUE),
+            hourly_start_rate = median(start_rate, na.rm = TRUE),
+            hourly_end_rate = median(end_rate, na.rm = TRUE),
+            one_time_projects = sum(payment_type == "Fixed-price"),
+            hourly_projects = sum(payment_type == "Hourly"),
+            total_projects = n()) |>
+  arrange(desc(fixed_price_project_value)) |>
+  gt() |>
+  tab_header(
+    title = md("**Median One Time Projects / Hourly Contracts**"),
+  ) |>
+  fmt_number(columns = c(fixed_price_project_value, hourly_start_rate, hourly_end_rate ),
+             decimals = 1) |>
+  tab_spanner(
+  label = "Fixed",
+  columns = c(fixed_price_project_value, one_time_projects)
+  ) |>
+  tab_spanner(
+  label = "Hourly",
+  columns = c(hourly_start_rate, hourly_end_rate,hourly_projects)
+  ) |>
+  cols_label(
+    search_keyword = "Keyword",
+    fixed_price_project_value = "Cost",
+    hourly_start_rate = "Start Rate",
+    hourly_end_rate = "End Rate",
+    one_time_projects = "Sample size",
+    hourly_projects = "Sample size",
+    total_projects = "Total sample"
+  )
+  
+median_project_prices_keyword
+```
+
+
+- Data Science Projects on average gets $100 (n = 1578)
+- Developer Projects on average gets $150 (n = 11468)
+- Marketing Projects on average gets $150 (n = 6017)		
+- Data Science & 3D people professional should focus for Hourly Contracts.
+
+
+
+
+
+## Which category is most posted by Client on Upwork for Developer
+
+```{r}
+# A bar graph for most posted Category 1 in Development
+bar_cat_1_dev <- data |>
+  filter(search_keyword == "Developer") |>
+  group_by(search_keyword,category_1) |>
+  summarise(count = n()) |>
+  mutate(freq = formattable::percent(count / sum(count))) |>
+  arrange(desc(count)) |>
+  top_n(n = 10) |>
+  ggplot(aes(x = reorder(category_1, freq), y = freq, fill = category_1)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_b(alpha = 0.8) +
+  geom_text(aes(label = paste0(freq)), position = position_stack(vjust = 1.05), size = 3.5)  + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = scales::breaks_pretty(n = 8)) +
+  theme_minimal() +
+  labs(title = "") +
+  xlab("Skills") +
+  ylab("Percentage of responses")
+
+bar_cat_1_dev
+```
+
+```{r}
+# A bar graph for most posted Category 1 in Development
+bar_cat_1_mkg <- data |>
+  filter(search_keyword == "Marketing") |>
+  group_by(search_keyword,category_1) |>
+  summarise(count = n()) |>
+  mutate(freq = formattable::percent(count / sum(count))) |>
+  arrange(desc(count)) |>
+  top_n(n = 10) |>
+  ggplot(aes(x = reorder(category_1, freq), y = freq, fill = category_1)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_d(alpha = 0.8) +
+  geom_text(aes(label = paste0(freq)), position = position_stack(vjust = 1.05), size = 3.5)  + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = scales::breaks_pretty(n = 8)) +
+  theme_minimal() +
+  labs(title = "") +
+  xlab("Skills") +
+  ylab("Percentage of responses")
+
+ggplotly(bar_cat_1_mkg)
+
+```
+
+
+## Which category is most posted by Client on Upwork for Data Science
+
+```{r}
+# A bar graph for most posted Category 1 in Data Science
+bar_cat_1_data_science <- data |>
+  filter(search_keyword == "Data_science") |>
+  group_by(search_keyword,category_1) |>
+  summarise(count = n()) |>
+  mutate(freq = formattable::percent(count / sum(count))) |>
+  arrange(desc(count)) |>
+  top_n(n = 10) |>
+  ggplot(aes(x = reorder(category_1, freq), y = freq, fill = category_1)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_d(alpha = 0.8) +
+  geom_text(aes(label = paste0(freq)), position = position_stack(vjust = 1.05), size = 3.5)  + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = scales::breaks_pretty(n = 8)) +
+  theme_minimal() +
+  labs(title = "") +
+  xlab("Skills") +
+  ylab("Percentage of responses")
+
+ggplotly(bar_cat_1_data_science)
+```
+
+
+# Which region clients pay higher for all Jobs? 
+
+```{r, warning=FALSE}
+data |>
+  group_by(client_country) |>
+  summarise(average_pay = median(start_rate, na.rm = TRUE)) |>
+  arrange(desc(average_pay)) |>
+  top_n(n = 10) |>
+  gt()
+```
+
+# Which keywords clients are most verified ?
+
+```{r, warning=FALSE}
+data |>
+  group_by(search_keyword, payment_situation) |>
+  summarise(count = n()) |>
+  mutate(frequency = formattable::percent(count / sum(count))) |>
+  gt() |>
+  tab_header(
+    title = md("**Payments by Job Types**"),
+  ) |>
+  cols_label(
+    payment_situation = "Categories",
+    count = "Count",
+    frequency = "Frequency"
+  )
+```
+
+
+
+

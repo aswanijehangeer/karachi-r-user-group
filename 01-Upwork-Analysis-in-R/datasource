@@ -1,0 +1,14 @@
+https://www.kaggle.com/datasets/ahmedmyalo/upwork-freelance-jobs-60k/
+
+Variable Defintions:
+
+1. job_title:  Specifies the nature of the job
+2. search_keyword: the keyword I've used in search bar to get that row result. Typed : 3D, Data science,  Developer, Marketing) 
+3. category_1 to category_9: These columns specify categories of skills that the client wrote as a relevant to the job
+4. payment_situation: the client activated and verified his payment card account on the site or not.
+5. new_connects_num: currently the site doubled the connects for the jobs, so now it's (2, 4, 8, 12, 16)
+6. applicants_num: number of the freelancers who applied proposal for that job yet. 
+7. payment_type: "Fixed-price" for the whole project at once & "Hourly" it counts every working hour and pay depends on the price per hour.
+8. job_cost: it's for "Fixed-price" projects; The projected budget can help freelancers gauge the project's scale and value.
+9. start_rate and end_rate:  it's for "Hourly" projects; it's the original Hourly_Rate range but in separated columns.
+

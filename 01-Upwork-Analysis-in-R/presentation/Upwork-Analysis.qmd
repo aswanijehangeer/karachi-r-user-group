@@ -1,0 +1,378 @@
+---
+title: "Upwork Market Analysis"
+subtitle: "R User Meet Up (Karachi)"
+author: "Uzair Aslam"
+echo: true
+format: 
+  revealjs:
+    slide-number: true
+    incremental: true
+    theme: styles.css
+    logo: kar-r-user-group.png
+  
+---
+
+# Introductions
+
+## Hello
+
+- My name is Uzair Aslam
+- Founder and Data Scientist @ [Stat Devs](https://statdevs.com/), a Data Analytics Company.
+- Consulted @ Cube Statistica, Canada, as Junior Data Scientist.
+- Worked as Data Analyst for Indus Hospital & Health Networks.
+- BSc Economics & Math, IBA (2022)
+- Find me on [{{< fa brands linkedin >}}](https://www.linkedin.com/in/uzairdatascientist/) 
+- Find me on [{{< fa brands github >}}](https://github.com/muzairaslam)
+
+## Tell us about:
+
+- Your Name
+- Your Industry
+- Used R before ?
+
+## Why are you here ?
+
+- I am student and wants to learn R.
+- I work in Industry and wants to learn Business Data Analysis in R.
+- I am in Academia and wants to see how R can be used in Research.
+- Just for Fun!
+
+## Karachi R User Group is for you!
+
+- Part of 92 Groups world wide with 79,564 members
+- Networking Opportunity with industry professionals using R
+- Learn about recent developments in R Ecosystem
+- Become a Speaker!
+- Give back to community
+
+## We are the 37th Country to host R Group 
+
+![](r-user-group-in-pakistan.png)
+
+
+# Data Analysis of Upwork Market
+
+## Upwork Background
+
+- Upwork is one of the leading global freelance platforms. 
+
+- 1 in 800 freelancers on Upwork makes more than $1000 per month.
+
+- Web Design was the most in-demand tech skill on Upwork in 2021.
+
+- Over 50% of all freelancers on Upwork provide clients with skilled services
+
+- Web Programming (43%), Web Design (31%), and social media marketing (25%) were the top on-demand skills with the highest growth on Upwork in 2020 - 2021.
+
+## Data Source
+
+- [Kaggle Data](https://www.kaggle.com/datasets/ahmedmyalo/upwork-freelance-jobs-60k/)
+
+- Scraped by Pakistani nationalist, resulting in location bias in job listings.
+
+![](data-screenshot.png)
+
+## Variables
+
+- search_keyword: The term the scraper typed in the search bar to retrieve the specific row of results. Typed : `3D`, `Data Science`,  `Developer`, `Marketing`
+- category_1 to category_9: These columns specify categories of skills that the client wrote as a relevant to the job
+- client_country: the country from where the job was placed.
+
+## Variables (Continued)
+- payment_type: `"Fixed-price"` for the whole project at once & `"Hourly"` which pays per hour.
+- job_cost: For `"Fixed-price"` projects only
+- start_rate and end_rate: For `"Hourly"` projects only
+
+## Loading Packages
+
+```{r}
+library(tidyverse)
+library(scales)
+library(gt)
+library(here)
+library(plotly)
+library(janitor)
+```
+
+## Load the raw data
+
+```{r}
+data <- (read_csv(here("data/data.csv")))
+dim(data)
+```
+
+- The goal of `{here}` is to enable easy file referencing in project-oriented workflows. 
+
+- In contrast to using `setwd()`, which is fragile and dependent on the way you organize your files.
+
+## Selecting Coloumns 
+
+```{r}
+# select columns for analysis
+data_selected <- data |>
+  clean_names() |>
+  select(search_keyword,
+         category_1,
+         payment_situation,
+         client_country,
+         payment_type,
+         job_cost,
+         start_rate,
+         end_rate)
+```
+
+- `clean_names()` from `{janitor}`automatically converts all your variable names to lower case and puts underscores in the gaps.
+
+
+## View of Data Set
+
+```{r}
+head(data_selected) |>
+  gt()
+```
+
+```{r}
+dim(data_selected)
+```
+
+# Data cleaning
+
+## Data Types Correction and Filtering
+
+```{r}
+#| output-location: fragment
+
+# correct data types
+data_selected$search_keyword <- factor(data_selected$search_keyword)
+
+# remove fixed price jobs where NAs are there
+# keep fixed prices projects with max client budget of $5000 
+# remove hourly contracts where end rate is not given by the client 
+data_cleaned <- data_selected |>
+  filter((!is.na(job_cost) & job_cost < 5000) | !is.na(end_rate))
+
+dim(data_cleaned)
+```
+```{r}
+data_remains <- (nrow(data_cleaned) / nrow(data_selected)) * 100
+print(data_remains)
+```
+
+# Exploratory Data Analysis (EDA)
+
+## Distribution of Fixed Cost Projects
+```{r, warning=FALSE}
+#| output-location: slide
+
+p <- ggplot(data_cleaned, aes(x = search_keyword, y = job_cost, fill = search_keyword)) +
+  geom_boxplot(size = 1,
+               outlier.shape = 1,
+               outlier.color = "black",
+               outlier.size  = 3) +
+  scale_y_continuous(label = dollar) +
+  labs(title = "Fixed Project Cost by Keyword Search",
+       x = "",
+       y = "") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  coord_flip()
+
+ggplotly(p) 
+```
+
+
+## Fixed Price Vs Hourly Jobs
+```{r}
+#| output-location: slide
+
+# calculate medians due to skewed distributions
+median_project_prices_keyword <- data_cleaned |>
+  group_by(search_keyword) |>
+  summarize(med_fixed_price_projects = median(job_cost, na.rm = TRUE),
+            med_hourly_start_rate = median(start_rate, na.rm = TRUE),
+            med_hourly_end_rate = median(end_rate, na.rm = TRUE),
+            mid_range =  (med_hourly_start_rate + med_hourly_end_rate)/2,
+            fixed_price_earnings = sum(job_cost, na.rm = TRUE),
+            fixed_price_project = sum(payment_type == "Fixed-price"),
+            hourly_projects = sum(payment_type == "Hourly"),
+            hourly_project_earnings = hourly_projects * mid_range,
+            total_projects = n()) |>
+  arrange(desc(med_fixed_price_projects)) |>
+  gt() |>
+  tab_header(
+    title = md("**Median One Time Projects / Hourly Contracts**"),
+  ) |>
+  fmt_number(columns = c(med_fixed_price_projects, med_hourly_start_rate, med_hourly_end_rate, mid_range, hourly_project_earnings, fixed_price_earnings), decimals = 1) |>
+  tab_spanner(
+  label = "Fixed",
+  columns = c(med_fixed_price_projects, fixed_price_project, fixed_price_earnings)
+  ) |>
+  tab_spanner(
+  label = "Hourly",
+  columns = c(med_hourly_start_rate, med_hourly_end_rate, mid_range, hourly_projects, hourly_project_earnings)
+  ) |>
+  cols_label(
+    search_keyword = "Keyword",
+    med_fixed_price_projects = "Cost",
+    med_hourly_start_rate = "Start Rate",
+    med_hourly_end_rate = "End Rate",
+    fixed_price_project = "Sample size",
+    hourly_projects = "Sample size",
+    total_projects = "Total sample",
+    hourly_project_earnings = "Earnings ($)",
+    mid_range = "Mid Rate",
+    fixed_price_earnings = "Earnings ($)"
+  )
+  
+median_project_prices_keyword
+```
+
+## Insights for Freelancers
+
+- Development Projects on average gets $150 (n = 11468)
+- Marketing Projects on average gets $150 (n = 6017)
+- Data Science Projects on average gets $100 (n = 1578)
+- Data Science professionals should focus for Hourly Contracts or come outside of Upwork.
+
+Note :The dataset exhibits sample bias and location bias.
+
+## Client's Top Developer categories?
+
+```{r}
+#| output-location: slide
+
+bar_cat_1_dev <- data_cleaned |>
+  filter(search_keyword == "Developer") |>
+  group_by(search_keyword,category_1) |>
+  summarise(count = n()) |>
+  mutate(freq = formattable::percent(count / sum(count))) |>
+  arrange(desc(count)) |>
+  top_n(n = 10) |>
+  ggplot(aes(x = reorder(category_1, freq), y = freq, fill = category_1)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_b(alpha = 0.8) +
+  geom_text(aes(label = paste0(freq)), position = position_stack(vjust = 1.05), size = 3.5)  + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = scales::breaks_pretty(n = 8)) +
+  theme_minimal() +
+  labs(title = "") +
+  xlab("Skills") +
+  ylab("Percentage of responses")
+
+bar_cat_1_dev
+```
+
+
+##  Client's Top Marketing categories?
+
+```{r}
+#| output-location: slide
+
+bar_cat_1_mkg <- data_cleaned |>
+  filter(search_keyword == "Marketing") |>
+  group_by(search_keyword,category_1) |>
+  summarise(count = n()) |>
+  mutate(freq = formattable::percent(count / sum(count))) |>
+  arrange(desc(count)) |>
+  top_n(n = 10) |>
+  ggplot(aes(x = reorder(category_1, freq), y = freq, fill = category_1)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_d(alpha = 0.8) +
+  geom_text(aes(label = paste0(freq)), position = position_stack(vjust = 1.05), size = 3.5)  + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = scales::breaks_pretty(n = 8)) +
+  theme_minimal() +
+  labs(title = "") +
+  xlab("Skills") +
+  ylab("Percentage of responses")
+
+bar_cat_1_mkg
+```
+
+## Client's Top Data Science categories?
+
+```{r}
+#| output-location: slide
+
+bar_cat_1_data_science <- data_cleaned |>
+  filter(search_keyword == "Data_science") |>
+  group_by(search_keyword,category_1) |>
+  summarise(count = n()) |>
+  mutate(freq = formattable::percent(count / sum(count))) |>
+  arrange(desc(count)) |>
+  top_n(n = 10) |>
+  ggplot(aes(x = reorder(category_1, freq), y = freq, fill = category_1)) +
+  geom_bar(stat = "identity") +
+  scale_colour_viridis_d(alpha = 0.8) +
+  geom_text(aes(label = paste0(freq)), position = position_stack(vjust = 1.05), size = 3.5)  + 
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent,
+                     breaks = scales::breaks_pretty(n = 8)) +
+  theme_minimal() +
+  labs(title = "") +
+  xlab("Skills") +
+  ylab("Percentage of responses")
+
+bar_cat_1_data_science
+```
+
+
+## Which region pays the most? 
+
+```{r, warning=FALSE}
+#| output-location: slide
+
+data_cleaned |>
+  group_by(client_country) |>
+  summarise(average_pay = median(start_rate, na.rm = TRUE)) |>
+  arrange(desc(average_pay)) |>
+  top_n(n = 10) |>
+  gt() |>
+  cols_label(
+    client_country = "Country",
+    average_pay = "Average Starting Rates",
+  )
+```
+
+
+# Comments ?
+
+
+## Announcements
+
+- Need speakers for December and January.
+
+- Email me at `m.uzair@statdevs.com` or post on Slack.
+
+- We need a venue to physically host these meetups.
+
+- The venue should be in Karachi.
+
+- It must have a projector
+
+- It can be a company, institute or someone's place 
+
+- Any ideas for Physical Meetup Location ?
+
+
+## Join the Groups
+
+[{{< fa brands meetup >}}](https://www.meetup.com/karachi-r-user-group/)
+
+
+[{{< fa brands slack >}}](https://www.linkedin.com/safety/go?url=https%3A%2F%2Fjoin.slack.com%2Ft%2Fkarachirusergroup%2Fsignup&trk=flagship-messaging-web&messageThreadUrn=urn%3Ali%3AmessagingThread%3A2-ODI5MmY5ZTEtZWMyNS00ZWRkLWI0YTEtZjE3NjcwMGY2Yzg2XzAxMw%3D%3D&lipi=urn%3Ali%3Apage%3Ad_flagship3_messaging_conversation_detail%3Bbl1pkvm0TUC0eXpHb0U8bQ%3D%3D)
+
+
+
+## Data Sources and Slide Link
+
+[Upwork Statistics](https://www.lucatagliaferro.com/post/upwork-statistics-trends/)
+
+Slides:
+
+[{{< fa brands github >}}](https://github.com/muzairaslam/Upwork-Analysis)
+
+# Thank you!
+
