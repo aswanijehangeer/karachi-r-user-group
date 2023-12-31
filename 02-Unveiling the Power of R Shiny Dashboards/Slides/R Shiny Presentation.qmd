@@ -1,0 +1,444 @@
+---
+title: "Unveiling the Power of R Shiny Dashboards"
+author: "Jehangeer Aswani"
+format:
+  revealjs:
+   theme: solarized
+   logo: images/logo.png
+footer: "www.aswanijehangeer.com"
+editor: visual
+---
+
+## ABOUT ME
+
+::: columns
+::: {.column .right}
+I am Jehangeer, a recent statistics graduate from Quaid-e-Azam University.
+
+<br>
+
+I offer my services as a professional R & Shiny freelancer on the Upwork platform.
+
+Contact me: [www.linkedin.com/in/aswanijehangeer/](https://www.linkedin.com/in/aswanijehangeer/)
+:::
+
+::: column
+![](images/Jehangeer-pic.jpg){fig-align="center" fig-alt="Jehangeer" width="80%"}
+:::
+:::
+
+## AGENDA
+
+We will talk in this presentation about:
+
+-   What is Shiny?
+-   What You Need to Get Started.
+-   Structure/Anatomy of Shiny and Hello Shiny App.
+-   Shiny Inputs & Outputs.
+-   Understanding Reactivity and Reactive Values.
+-   Sharing Apps - Deployment.
+-   What's Next - (Shiny Learning Resources).
+-   **Ask questions in the chat throughout!**
+
+## TALK RESOURCES
+
+You can find all the material we'll use for this presentation in this GitHub repository.
+
+<br>
+
+GitHub: [github.com/aswanijehangeer/Unveiling-the-Power-of-RShiny-Dashboards](https://github.com/aswanijehangeer/Unveiling-the-Power-of-RShiny-Dashboards)
+
+## WHAT IS SHINY?
+
+::: columns
+::: {.column .right}
+Shiny is an R package that makes it easy to build interactive web applications (apps) straight from R.
+
+It allows users to convert R code into web applications without needing expertise in web development languages like HTML, CSS, or JavaScript.
+:::
+
+::: column
+![](images/shiny-logo.png){fig-align="center" fig-alt="Shiny logo" width="100%"}
+:::
+:::
+
+## WHAT YOU NEED TO GET STARTED IN SHINY?
+
+You just need **R** and **RStudio (IDE)** to get started in Shiny.
+
+<br> **R** is a free, open-source programming language that is used for data mining, statistical analysis, data visualization, and machine learning. <br> Download R here: [cran.r-project.org/](https://cran.r-project.org/) <br>
+
+**RStudio** is a free, open-source, integrated development environment (IDE) for the R programming language. <br> Download RStudio here: [posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
+
+## RSTUDIO INTERFACE
+
+This is how your rstudio interface should look like after complete installation.
+
+![](images/rstudio-interface.jpeg){fig-align="center" fig-alt="Shiny logo"}
+
+## STRUCTURE OF A SHINY APP
+
+Shiny apps can be developed in a single script named `app.R`. <br> `app.R` has three components:
+
+-   a user interface (UI) object.
+-   a server function.
+-   a call to the `shinyApp` function. <br>
+
+The `ui` object shapes the app's look and feel, while the server function holds the app's instructions for execution. The `shinyApp` function combines the UI and `server` logic to create the Shiny app object.
+
+## STRUCTURE OF A SHINY APP CONT...
+
+<br> However, for larger applications, splitting the code into two separate files, namely `ui.R` and `server.R`, is a good option.
+
+<br> This separation allows for better organization and management of the user interface (UI) elements in `ui.R` and the server-side logic in `server.R`.
+
+## ANATOMY OF A SHINY APP
+
+Here is a code template for an empty app.
+
+``` r
+# Loading Package ----
+library(shiny)
+
+# Define UI ----
+ui <- fluidPage(
+  
+)
+
+# Define server logic ----
+server <- function(input, output) {
+  
+}
+
+# Run the app ----
+shinyApp(ui = ui, server = server)
+```
+
+## LET'S BUILD A SIMPLE HELLO SHINY APP
+
+![](images/hello-world-shiny.png){fig-align="center" fig-alt="Hello Shiny"}
+
+## SIMPLE HELLO SHINY APP - USER INTERFACE
+
+Here is the `ui` object for the Hello Shiny App.
+
+``` r
+library(shiny)
+
+# Define UI for app that draws a histogram ----
+ui <- fluidPage(
+
+  # App title ----
+  titlePanel("Hello Shiny!"),
+
+  # Sidebar layout with input and output definitions ----
+  sidebarLayout(
+
+    # Sidebar panel for inputs ----
+    sidebarPanel(
+
+      # Input: Slider for the number of bins ----
+      sliderInput(inputId = "bins",
+                  label = "Number of bins:",
+                  min = 1,
+                  max = 50,
+                  value = 30)
+
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(
+
+      # Output: Histogram ----
+      plotOutput(outputId = "distPlot")
+
+    )
+  )
+)
+```
+
+## SIMPLE HELLO SHINY APP - SERVER
+
+Here is the `server` function for the Hello Shiny App.
+
+``` r
+# Define server logic required to draw a histogram ----
+server <- function(input, output) {
+
+  # Histogram of the Old Faithful Geyser Data ----
+  # with requested number of bins.
+  # This expression that generates a histogram is wrapped in a call
+  # to renderPlot to indicate that:
+  #
+  # 1. It is "reactive" and therefore should be automatically
+  #    re-executed when inputs (input$bins) change.
+  # 2. Its output type is a plot.
+  output$distPlot <- renderPlot({
+
+    x    <- faithful$waiting
+    bins <- seq(min(x), max(x), length.out = input$bins + 1)
+
+    hist(x, breaks = bins, col = "#007bc2", border = "white",
+         xlab = "Waiting time to next eruption (in mins)",
+         main = "Histogram of waiting times")
+
+    })
+}
+```
+
+## RUNNING AN APP
+
+Every Shiny app has the same structure: an `app.R` file that contains ui and server. You can create a Shiny app by making a new directory and saving an `app.R` file inside it.
+
+::: {.callout-note collapse="false" appearance="default" icon="true"}
+## Optional caption (note)
+
+It is recommended that each app will live in its own unique directory.
+:::
+
+You can run a Shiny app by giving the name of its directory to the function `runApp`. <br> For example if your Shiny app is in a directory called `my_app`, run it with the following code:
+
+``` r
+runApp("my_app")
+```
+
+## RELAUNCHING AN APP
+
+To relaunch your Shiny app:
+
+-   Run runApp("myapp"), or
+
+-   Open the app.R script in your RStudio editor. RStudio will recognize the Shiny script and provide a Run App button (at the top of the editor).
+
+![](images/run-app.png){fig-align="center" fig-alt="Relaunch"}
+
+## THERE ARE MORE THAN 20 INPUTS IN SHINY
+
+![](images/shiny-inputs.png){fig-align="center" fig-alt="Input"}
+
+## SHINY INPUT SYNTAX
+
+![](images/input-syntax.png){fig-align="center" fig-alt="Input-Syntax"}
+
+## SHINY INPUT - EXAMPLE
+
+::: columns
+::: {.column .right}
+Create an input with an \*Input() function.
+
+``` {.r code-line-numbers="4-8"}
+library(shiny)
+
+ui <- fluidPage(
+  sliderInput(
+    inputId = "num",
+    label = "Choose a number",
+    value = 25, min = 1, max = 100
+  )
+)
+server <- function(input, output) {
+
+}
+
+shinyApp(ui = ui, server = server)
+```
+:::
+
+::: column
+![](images/Input.png){fig-align="center" fig-alt="Input"}
+:::
+:::
+
+## SHINY OUTPUTS
+
+![](images/output-functions.png){fig-align="center" fig-alt="Shiny Outputs"}
+
+## SHINY OUTPUT SYNTAX
+
+To display output, add it to `fluidPage()` with an `*Output()` function.
+
+![](images/plotoutput.png){fig-align="center" fig-alt="Plot-Output"}
+
+## SHINY OUTPUT - EXAMPLE
+
+::: columns
+::: {.column .right}
+``` {.r code-line-numbers="9"}
+library(shiny)
+
+ui <- fluidPage(
+  sliderInput(
+    inputId = "num",
+    label = "Choose a number",
+    value = 25, min = 1, max = 100
+  ),
+  plotOutput("hist")
+)
+server <- function(input, output) {
+
+}
+
+shinyApp(ui = ui, server = server)
+```
+:::
+
+::: column
+![](images/shiny-output.png){fig-align="center" fig-alt="Input"}
+:::
+:::
+
+## QUICK RECAP - WHAT WE HAVE LEARN
+
+![](images/quick-recap.png){fig-align="center" fig-alt="Recap"}
+
+# SERVER: HOW TO ASSESMBE INPUTS INTO OUTPUTS?
+
+To write a server function, there are three basic rules. If you follow the three rules, the output will automatically update.
+
+## 1. Save objects to display to output\$.
+
+``` r
+server <- function(input, output) 
+{
+        output$hist <- #code
+}
+```
+
+![](images/output-hist.png){fig-align="center" fig-alt="Outputs"}
+
+## 2. Build objects to display with render\*()
+
+``` r
+server <- function(input, output) {
+  output$hist <- renderPlot({
+    title <- "100 random normal values"
+    hist(rnorm(100), main = title)
+  })
+}
+```
+
+![](images/renderplots.png){fig-align="center" fig-alt="RenderPlots"}
+
+## 3. Access input values with input\$
+
+``` r
+server <- function(input, output) {
+  output$hist <- renderPlot({
+    hist(rnorm(input$num))
+  })
+}
+```
+
+The input value changes whenever a user changes the input.
+
+![](images/input-values.png){fig-align="center" fig-alt="Input-Values"}
+
+## QUICK RECAP: RENDERS
+
+![](images/renders-recap.png){fig-align="center" fig-alt="Render-Recap"}
+
+## QUICK RECAP: SERVER
+
+![](images/server-recap.png){fig-align="center" fig-alt="Server-Recap"}
+
+## WHAT IS REACTIVITY?
+
+Reactivity in shiny refers to the automatic updating of outputs based on changes in inputs or data. <br> <br> Reactivity automatically occurs whenever we use an input value to render an output object.
+
+<br>
+
+``` {.r code-line-numbers="2,3"}
+function(input, output) {
+  output$hist <- renderPlot({
+    hist(rnorm(input$num))
+  })
+}
+```
+
+## WHAT IS A REACTIVE VALUE?
+
+A reactive value is an object that causes reactive functions to re-execute when their value changes. <br> For example, user inputs to a Shiny application are reactive value objects.
+
+![](images/reactive-value.png){fig-align="center" fig-alt="Reactive-Value"}
+
+## REACTIVE VALUES CONT...
+
+Reactive values work together with reactive functions. We cannot call a reactive value from outside of one.
+
+![](images/reactive-value-2.png){fig-align="center" fig-alt="Reactive-Value"}
+
+## QUICK RECAP: REACTIVE VALUES
+
+![](images/reactive-value-recap.png){fig-align="center" fig-alt="Reactive-Value-Recap"}
+
+## SHARE YOUR APPS
+
+When it comes to sharing Shiny apps, we have two basic options:
+
+1.  **Share your Shiny app as R script**. This is the simplest way to share an app, but it works only if your users have R on their own computer (and know how to use it).
+
+2.  **Share your Shiny app as a web page**. This is definitely the most user friendly way to share a Shiny app. Your users can navigate to your app through the internet with a web browser.
+
+## SHARE AS A WEB PAGE
+
+Sharing Shiny apps as a web page can be accomplished through various methods:
+
+<br>
+
+-   Shinyapps.io.
+-   Shiny Server.
+-   Posit Connect.
+
+## SHINYAPPS.IO
+
+Posit's Shinyapps.io platform allows for easy deployment and sharing of Shiny applications. We can publish our apps directly from RStudio to Shinyapps.io.
+
+This a shiny app that I have deployed on shinyapps.io this will be how a link looks like and you can share with anyone.
+
+<br> [aswanijahangeer.shinyapps.io/chess_grandmasters_shinyapp/](https://aswanijahangeer.shinyapps.io/chess_grandmasters_shinyapp/)
+
+<br>
+
+Github of this App: [aswanijehangeer/Chess-Grandmaster-Shiny-App](https://github.com/aswanijehangeer/Chess-Grandmaster-Shiny-App)
+
+## SHINY SERVER & POSIT CONNECT
+
+<br>
+
+Shiny Server is a companion program to Shiny that builds a web server designed to host Shiny apps. It's free, open source, and available from GitHub.
+
+<br>
+
+For enterprise-level deployment and sharing, RStudio Connect provides a secure and managed platform to publish and share Shiny applications within organizations.
+
+## YOU KNOW NOW HOW TO ...
+
+<br>
+
+![](images/what-you-learn.png){fig-align="center" fig-alt="Conclusion"}
+
+## WHAT'S NEXT - SHINY LEARNING RESOURCES
+
+::: columns
+::: {.column .right}
+-   [mastering-shiny.org](https://mastering-shiny.org/)
+-   [Course developed by Chanin Nantasenamat (aka Data Professor)](https://www.youtube.com/watch?v=9uFQECk30kA)
+-   [Publishing Visualizations in R with Shiny and flexdashboard](https://www.coursera.org/learn/data-viz-shiny-dashboards)
+-   [Shiny Fundemantals Track with R - DataCamp](https://app.datacamp.com/learn/skill-tracks/shiny-fundamentals-with-r)
+-   **Ask:** [RStudio Community](https://community.rstudio.com/)
+:::
+
+::: column
+![](images/mastering-shiny.png){fig-align="center" fig-alt="Mastering_Shiny"}
+:::
+:::
+
+# THANKS YOU!
+
+<br> Connect me here:
+
+<br> [www.aswanijehangeer.com](https://aswanijehangeer.com/)
+
+<br>
+
+[www.linkedin.com/in/aswanijehangeer/](https://www.linkedin.com/in/aswanijehangeer/)
